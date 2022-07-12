@@ -1,9 +1,15 @@
 use std::thread;
+use std::sync::{mpsc, Arc, Mutex};
 
 pub struct ThreadPool{
     //closures here don't return anything and just handle the connection
     workers: Vec<Worker>,
+    sender: mpsc::Sender<Job>,
 }
+///
+/// This will hold the closures we'll send to the channel 
+/// We use a trait object here so all acceptable jobs can be passed 
+type Job = Box<dyn FnOnce() + Send + 'static>;
 
 impl ThreadPool {
     //we’ll use this 4 threads as the number of elements in a collection of threads, which is what the usize type is for
@@ -19,21 +25,28 @@ impl ThreadPool {
         //
         assert!(size > 0);
 
+        let (sender,receiver) = mpsc::channel(); 
+        let receiver = Arc::new(Mutex::new(receiver)); 
+        
+        
         let mut workers = Vec::with_capacity(size);
 
         for id in 0..size{
             //create workers
-            workers.push(Worker::new(id)); 
+            //we want shared ownership and mutability for the receiver 
+            //clone doesn't actually copy the data but increases the reference count
+            workers.push(Worker::new(id,Arc::clone(&receiver))); 
         }
 
-        ThreadPool {workers}
+        ThreadPool {workers,sender}
     }
 
     pub fn execute<F>(&self,f:F)
     where
         F: FnOnce() + Send + 'static
     {
-         
+        let job = Box::new(f); 
+        self.sender.send(job).unwrap(); 
     }
 }
 ///
@@ -45,8 +58,14 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(id: usize) -> Worker{
-        let handle = thread::spawn(||{}); 
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker{
+        let handle = thread::spawn(move || loop{
+            let job = receiver.lock().unwrap().recv().unwrap(); 
+
+            println!("Worker {} got a job; executing",id); 
+
+            job(); 
+        }); 
         Worker{id,handle} 
     }
 }
