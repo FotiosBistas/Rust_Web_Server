@@ -2,7 +2,7 @@ use std::net::{TcpListener,TcpStream};
 //get access to certain traits that let us read from and write to the stream 
 use std::io::prelude::*; 
 use std::{fs};
-
+use web_server::ThreadPool; 
 fn main() {
     //bind a listener to the local host 
     //handle error case is important 
