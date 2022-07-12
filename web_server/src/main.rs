@@ -21,5 +21,10 @@ fn handle_connection(mut stream:TcpStream){
 
     stream.read(&mut buffer).unwrap();
 
-    println!("Request: {}", String::from_utf8_lossy(&buffer[..])); 
+    println!("Read: {}",String::from_utf8_lossy(&buffer[..])); 
+    let response = "HTTP/1.1 200 OK\r\n\r\n"; 
+    println!("Response: {}",response); 
+    //error handling here 
+    stream.write(response.as_bytes()).unwrap(); 
+    stream.flush().unwrap(); 
 }
