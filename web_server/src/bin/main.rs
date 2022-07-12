@@ -1,16 +1,20 @@
 use std::net::{TcpListener,TcpStream}; 
 //get access to certain traits that let us read from and write to the stream 
 use std::io::prelude::*; 
-use std::fs; 
+use std::{fs};
+
 fn main() {
     //bind a listener to the local host 
     //handle error case is important 
-    let listener = 
-    TcpListener::bind("127.0.0.1:7878").unwrap(); 
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap(); 
+    let pool = ThreadPool::new(4); 
 
     for stream in listener.incoming() {
         let stream = stream.unwrap(); 
-        handle_connection(stream); 
+        
+        pool.execute(|| {
+            handle_connection(stream); 
+        }); 
     }
 }
 
