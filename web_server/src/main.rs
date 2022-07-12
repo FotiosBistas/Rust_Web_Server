@@ -1,6 +1,7 @@
 use std::net::{TcpListener,TcpStream}; 
 //get access to certain traits that let us read from and write to the stream 
 use std::io::prelude::*; 
+use std::fs; 
 fn main() {
     //bind a listener to the local host 
     //handle error case is important 
@@ -22,7 +23,14 @@ fn handle_connection(mut stream:TcpStream){
     stream.read(&mut buffer).unwrap();
 
     println!("Read: {}",String::from_utf8_lossy(&buffer[..])); 
-    let response = "HTTP/1.1 200 OK\r\n\r\n"; 
+    let status_line = "HTTP/1.1 200 OK\r\n\r\n"; 
+    let contents = fs::read_to_string("hello.html").unwrap(); 
+    let response = format!(
+        "{}\r\nContent-Length: {}\r\n\r\n{}", 
+        status_line, 
+        contents.len(), 
+        contents, 
+    );
     println!("Response: {}",response); 
     //error handling here 
     stream.write(response.as_bytes()).unwrap(); 
