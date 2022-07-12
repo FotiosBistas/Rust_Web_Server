@@ -1,7 +1,8 @@
 use std::thread;
 
 pub struct ThreadPool{
-    threads: Vec<thread::JoinHandle<()>>,
+    //closures here don't return anything and just handle the connection
+    workers: Vec<Worker>,
 }
 
 impl ThreadPool {
@@ -15,15 +16,17 @@ impl ThreadPool {
     /// The new function panics is the size is zero 
     pub fn new(size: usize) -> ThreadPool{
         //validate that usize > 0 
+        //
         assert!(size > 0);
 
-        let mut threads = Vec::with_capacity(size);
+        let mut workers = Vec::with_capacity(size);
 
-        for _ in 0..size{
-            //create threads
+        for id in 0..size{
+            //create workers
+            workers.push(Worker::new(id)); 
         }
 
-        ThreadPool {threads}
+        ThreadPool {workers}
     }
 
     pub fn execute<F>(&self,f:F)
@@ -31,5 +34,19 @@ impl ThreadPool {
         F: FnOnce() + Send + 'static
     {
          
+    }
+}
+///
+/// Thread::spawn expects to get some code and run immediately. 
+/// Here we want to create the threads and give the code later. 
+struct Worker {
+    id: usize, 
+    handle:thread::JoinHandle<()>, 
+}
+
+impl Worker {
+    fn new(id: usize) -> Worker{
+        let handle = thread::spawn(||{}); 
+        Worker{id,handle} 
     }
 }
