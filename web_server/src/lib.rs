@@ -49,12 +49,24 @@ impl ThreadPool {
         self.sender.send(job).unwrap(); 
     }
 }
+
+impl Drop for ThreadPool {
+    fn drop(&mut self){
+        for worker in &mut self.workers{
+            println!("Shutting down worker {}",worker.id); 
+
+            if let Some(handle) = worker.handle.take() {
+                handle.join().unwrap(); 
+            }; 
+        }
+    }    
+}
 ///
 /// Thread::spawn expects to get some code and run immediately. 
 /// Here we want to create the threads and give the code later. 
 struct Worker {
     id: usize, 
-    handle:thread::JoinHandle<()>, 
+    handle:Option<thread::JoinHandle<()>>, 
 }
 
 impl Worker {
@@ -66,6 +78,6 @@ impl Worker {
 
             job(); 
         }); 
-        Worker{id,handle} 
+        Worker{id, handle:Some(handle)} 
     }
 }
