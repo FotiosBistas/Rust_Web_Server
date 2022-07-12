@@ -21,18 +21,27 @@ fn handle_connection(mut stream:TcpStream){
     let mut buffer = [0;1024]; 
 
     stream.read(&mut buffer).unwrap();
+    //a get request
+    let get = b"GET / HTTP/1.1\r\n"; 
+    
+    //handle the get request 
+    if buffer.starts_with(get) {
+        let status_line = "HTTP/1.1 200 OK\r\n\r\n"; 
+        let contents = fs::read_to_string("hello.html").unwrap(); 
+        let response = format!(
+            "{}\r\nContent-Length: {}\r\n\r\n{}", 
+            status_line, 
+            contents.len(), 
+            contents, 
+        );
+        //println!("Response: {}",response); 
+        //error handling here 
+        stream.write(response.as_bytes()).unwrap(); 
+        stream.flush().unwrap();
+    }else {
+        //handle some other request 
+    }
 
-    println!("Read: {}",String::from_utf8_lossy(&buffer[..])); 
-    let status_line = "HTTP/1.1 200 OK\r\n\r\n"; 
-    let contents = fs::read_to_string("hello.html").unwrap(); 
-    let response = format!(
-        "{}\r\nContent-Length: {}\r\n\r\n{}", 
-        status_line, 
-        contents.len(), 
-        contents, 
-    );
-    println!("Response: {}",response); 
-    //error handling here 
-    stream.write(response.as_bytes()).unwrap(); 
-    stream.flush().unwrap(); 
+    //println!("Read: {}",String::from_utf8_lossy(&buffer[..])); 
+     
 }
